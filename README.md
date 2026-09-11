@@ -12,11 +12,13 @@
 
 In 5G-Advanced and emerging 6G Massive MIMO communications, transmitting explicit **Channel State Information (CSI)** from the User Equipment (UE) back to the Base Station (BS) is mandatory for closed-loop beamforming, precoding, and interference management. However, at **28GHz millimeter-wave (mmWave)** frequencies with large-scale antenna arrays (e.g., $N_t = 32$ BS antennas, $N_r = 2$ UE antennas, and $N_c = 32$ subcarriers), the raw instantaneous CSI tensor spans:
 
-$$\mathbf{H} \in \mathbb{R}^{2 \times N_t \times N_r \times N_c} = \mathbb{R}^{2 \times 32 \times 2 \times 32} \quad (4,096 \text{ real-valued floats})$$
+$$
+\mathbf{H} \in \mathbb{R}^{2 \times N_t \times N_r \times N_c} = \mathbb{R}^{2 \times 32 \times 2 \times 32} \quad (4096 \text{ real-valued floats})
+$$
 
 Transmitting this raw CSI tensor incurs severe uplink overhead and intolerable transmission latency. Traditional compressive sensing (CS) algorithms struggle in non-strictly-sparse environments and entail prohibitive iterative computational complexity.
 
-This repository implements an end-to-end **3D-CNN Autoencoder** integrated with **Squeeze-and-Excitation (SE) Channel Attention** and **3D Residual Decoder Blocks**, optimized via a **Three-Phase Curriculum Learning Strategy** ($\mathcal{L}_{\text{MSE}} \to \mathcal{L}_{\text{NMSE}} \to \mathcal{L}_{\text{Spectral}}$). It achieves up to **$128\times$ compression (99.22% data reduction)** while robustly preserving spatial beamforming phase coherence.
+This repository implements an end-to-end **3D-CNN Autoencoder** integrated with **Squeeze-and-Excitation (SE) Channel Attention** and **3D Residual Decoder Blocks**, optimized via a **Three-Phase Curriculum Learning Strategy** (Phase 1: MSE $\to$ Phase 2: NMSE $\to$ Phase 3: Spectral Loss). It achieves up to **128× compression (99.22% data reduction)** while robustly preserving spatial beamforming phase coherence.
 
 ---
 
@@ -29,7 +31,11 @@ The overall pipeline is illustrated below:
 ### Key Architectural Highlights:
 1. **4D Real Tensor Input**: Preserves explicit 3D spatial-frequency correlations ($N_t \times N_r \times N_c$) alongside real/imaginary complex channel components.
 2. **Logarithmic Magnitude Normalization**: Compresses dynamic attenuation range to $[0, 1]$ while strictly preserving complex channel phase $\angle \mathbf{H}$:
-   $$|\mathbf{H}_{\text{norm}}| = \frac{\ln(1 + |\mathbf{H}|)}{\ln(1 + H_{\text{global\_max}})}, \quad \angle \mathbf{H}_{\text{norm}} = \angle \mathbf{H}$$
+
+   $$
+   |\mathbf{H}_{\mathrm{norm}}| = \frac{\ln(1 + |\mathbf{H}|)}{\ln(1 + H_{\mathrm{max}})}, \quad \angle \mathbf{H}_{\mathrm{norm}} = \angle \mathbf{H}
+   $$
+
 3. **3D Squeeze-and-Excitation (SE) Attention**: Adaptively models inter-channel dependencies via 3D Global Average Pooling and a two-layer bottleneck excitation network ($r=8$), re-calibrating channel weights to emphasize dominant beam directions and suppress deep fade noise.
 4. **3D Residual Decoder**: Incorporates 3D transposed convolutions paired with residual skip connections to recover high-frequency channel textures and eliminate checkerboard deconvolution artifacts.
 5. **Flexible Compression Ratios (CR)**: Supports latent bottleneck dimensions $B \in \{256, 128, 64, 32\}$ corresponding to compression ratios of **1/16, 1/32, 1/64, and 1/128**.
@@ -51,7 +57,7 @@ The model was comprehensively evaluated on the **DeepMIMO 28GHz Ray-tracing Data
 | **1/64** | 64 | **-3.65 dB** | **-24.63 dB** (BS4) | **0.8122** | **0.9958** | Balanced high compression |
 | **1/128** | 32 | **-3.22 dB** | **-20.76 dB** (BS10) | **0.7686** | **0.9898** | ★ **Extreme compression (99.22% feedback reduction)** |
 
-> **Key Takeaway**: At $1/32$ compression, the average NMSE (-7.71 dB) outperforms $1/16$ due to regularized bottleneck noise suppression. Even at extreme $1/128$ compression, Pearson correlation remains remarkably high ($\rho = 0.77 \sim 0.99$), proving that the critical beamforming phase vector is preserved.
+> **Key Takeaway**: At 1/32 compression, the average NMSE (-7.71 dB) outperforms 1/16 due to regularized bottleneck noise suppression. Even at extreme 1/128 compression, Pearson correlation remains remarkably high ($\rho = 0.77 \sim 0.99$), proving that the critical beamforming phase vector is preserved.
 
 ---
 
@@ -62,11 +68,19 @@ Standard MSE loss struggles with millimeter-wave channels because weak paths at 
 ![Curriculum Loss Strategy](./docs/images/fig2_three_stage_curriculum_loss.png)
 
 1. **Phase 1 (Coarse Energy Convergence)**:
-   $$\mathcal{L}_1 = \mathcal{L}_{\text{MSE}} = \frac{1}{N} \sum \|\mathbf{H} - \hat{\mathbf{H}}\|^2$$
+   $$
+   \mathcal{L}_1 = \mathcal{L}_{\mathrm{MSE}} = \frac{1}{N} \sum \|\mathbf{H} - \hat{\mathbf{H}}\|^2
+   $$
+
 2. **Phase 2 (Deep Fade Penalty)**:
-   $$\mathcal{L}_2 = \mathcal{L}_{\text{MSE}} + \mathcal{L}_{\text{NMSE}} = \mathcal{L}_{\text{MSE}} + \sum \frac{\|\mathbf{H} - \hat{\mathbf{H}}\|^2}{\|\mathbf{H}\|^2 + \epsilon}$$
+   $$
+   \mathcal{L}_2 = \mathcal{L}_{\mathrm{MSE}} + \mathcal{L}_{\mathrm{NMSE}} = \mathcal{L}_{\mathrm{MSE}} + \sum \frac{\|\mathbf{H} - \hat{\mathbf{H}}\|^2}{\|\mathbf{H}\|^2 + \epsilon}
+   $$
+
 3. **Phase 3 (Spectral Amplitude & Phase Locking)**:
-   $$\mathcal{L}_3 = \mathcal{L}_2 + \text{MSE}(|\mathbf{H}|, |\hat{\mathbf{H}}|) + 0.5 \cdot \text{mean}\Big( \big( (\angle\mathbf{H} - \angle\hat{\mathbf{H}} + \pi) \bmod 2\pi - \pi \big)^2 \Big)$$
+   $$
+   \mathcal{L}_3 = \mathcal{L}_2 + \mathrm{MSE}(|\mathbf{H}|, |\hat{\mathbf{H}}|) + 0.5 \cdot \mathrm{mean}\Big( \big( (\angle\mathbf{H} - \angle\hat{\mathbf{H}} + \pi) \bmod 2\pi - \pi \big)^2 \Big)
+   $$
 
 ---
 
