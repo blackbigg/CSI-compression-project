@@ -1,0 +1,27 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Data & Checkpoints
+*.pkl
+*.npy
+*.pth
+*.pt
+*.h5
+!H_matrix.npy.example
+
+# Environments & IDE
+.venv/
+venv/
+ENV/
+env/
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
