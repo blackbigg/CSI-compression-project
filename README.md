@@ -1,10 +1,14 @@
-# Deep Learning-based mmWave MIMO CSI Compression and Reconstruction System
-### 28GHz 毫米波 MIMO 通道狀態資訊 (CSI) 深度學習自編碼器壓縮與重建
+### 基於深度學習之 28GHz 毫米波 MIMO CSI 壓縮系統
+### 28GHz mmWave MIMO CSI Compression and Reconstruction System via Deep Learning Autoencoder
 
 [![Python 3.8+](https://img.shields.io/badge/Python-3.8%2B-blue.svg)](https://www.python.org/)
 [![PyTorch](https://img.shields.io/badge/PyTorch-2.0%2B-ee4c2c.svg)](https://pytorch.org/)
 [![DeepMIMO](https://img.shields.io/badge/Dataset-DeepMIMO%20v3-green.svg)](https://www.deepmimo.net/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
+> **專案團隊**：劉誠豐（演算法架構、神經網路設計與實驗驗證）、陳柏安、謝坤霖  
+> **指導教授**：陳維昌 教授  
+> **執行單位**：國立臺北科技大學 電子工程系 通訊專題  
 
 ---
 
@@ -52,12 +56,12 @@ The model was comprehensively evaluated on the **DeepMIMO 28GHz Ray-tracing Data
 
 | Compression Ratio (CR) | Latent Dim ($B$) | Overall Avg NMSE (dB) | Best LOS NMSE (dB) | Avg Pearson Corr ($\rho$) | Best Pearson Corr ($\rho$) | Benchmark Characteristics |
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
-| **1/16** | 256 | **-7.54 dB** | **-27.88 dB** (BS10) | **0.8906** | **0.9981** | Ultra-high reconstruction fidelity in strong LOS |
-| **1/32** | 128 | **-7.71 dB** | **-27.18 dB** (BS10) | **0.8831** | **0.9977** | ★ **Optimal engineering sweet spot** |
+| **1/16** | 256 | **-7.54 dB** | **-27.88 dB** (BS10) | **0.8906** | **0.9981** | High reconstruction fidelity in strong LOS |
+| **1/32** | 128 | **-7.71 dB** | **-27.18 dB** (BS10) | **0.8831** | **0.9977** | ★ **Practical trade-off sweet spot** |
 | **1/64** | 64 | **-3.65 dB** | **-24.63 dB** (BS4) | **0.8122** | **0.9958** | Balanced high compression |
-| **1/128** | 32 | **-3.22 dB** | **-20.76 dB** (BS10) | **0.7686** | **0.9898** | ★ **Extreme compression (99.22% feedback reduction)** |
+| **1/128** | 32 | **-3.22 dB** | **-20.76 dB** (BS10) | **0.7686** | **0.9898** | ★ **128× compression ratio (99.22% feedback reduction)** |
 
-> **Key Takeaway**: At 1/32 compression, the average NMSE (-7.71 dB) outperforms 1/16 due to regularized bottleneck noise suppression. Even at extreme 1/128 compression, Pearson correlation remains remarkably high ($\rho = 0.77 \sim 0.99$), proving that the critical beamforming phase vector is preserved.
+> **Key Takeaway**: At 1/32 compression, the average NMSE (-7.71 dB) outperforms 1/16 due to regularized bottleneck noise suppression. At 1/128 compression ratio, Pearson correlation remains stable ($\rho = 0.77 \sim 0.99$), showing that the relative beamforming phase structure is preserved.
 
 ---
 
